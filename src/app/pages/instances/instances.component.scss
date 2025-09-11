@@ -1,0 +1,77 @@
+// Pagination controls styling
+.pagination-controls {
+  .page-size-selector {
+    select {
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 6px 12px;
+      font-size: 14px;
+      cursor: pointer;
+      
+      &:hover {
+        border-color: #999;
+      }
+      
+      &:focus {
+        outline: none;
+        border-color: #1976d2;
+        box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
+      }
+    }
+  }
+
+  .page-navigation {
+    .page-input {
+      width: 70px;
+      padding: 6px 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      text-align: center;
+      font-size: 14px;
+      
+      &:focus {
+        outline: none;
+        border-color: #1976d2;
+        box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
+      }
+      
+      &::-webkit-outer-spin-button,
+      &::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+      
+      &[type=number] {
+        -moz-appearance: textfield;
+      }
+    }
+  }
+
+  .page-info {
+    font-size: 14px;
+    color: #666;
+  }
+
+  .loading-indicator {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+    font-style: italic;
+  }
+}
+
+// Responsive design for mobile
+@media (max-width: 768px) {
+  .pagination-controls {
+    flex-direction: column;
+    gap: 16px;
+    
+    .page-size-selector,
+    .page-navigation,
+    .page-info {
+      justify-content: center;
+      width: 100%;
+    }
+  }
+}

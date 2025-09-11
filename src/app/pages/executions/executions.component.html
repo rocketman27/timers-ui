@@ -1,0 +1,78 @@
+<h2 style="margin:16px 0;">Execution History</h2>
+
+<!-- Summary Statistics -->
+<mat-card style="margin-bottom:12px;">
+  <mat-card-content>
+    <div style="display:flex; gap:24px; align-items:center; flex-wrap: wrap;">
+      <div style="text-align: center;">
+        <div style="font-size: 24px; font-weight: bold; color: #4caf50;">{{getExecutionCount('SUCCESS')}}</div>
+        <div style="color: #777; font-size: 12px;">Successful</div>
+      </div>
+      <div style="text-align: center;">
+        <div style="font-size: 24px; font-weight: bold; color: #f44336;">{{getExecutionCount('FAILED')}}</div>
+        <div style="color: #777; font-size: 12px;">Failed</div>
+      </div>
+      <div style="text-align: center;">
+        <div style="font-size: 24px; font-weight: bold; color: #ff9800;">{{getExecutionCount('SKIPPED')}}</div>
+        <div style="color: #777; font-size: 12px;">Skipped</div>
+      </div>
+      <div style="text-align: center;">
+        <div style="font-size: 24px; font-weight: bold; color: #1976d2;">{{getInProgressCount()}}</div>
+        <div style="color: #777; font-size: 12px;">In Progress</div>
+      </div>
+      <div style="text-align: center;">
+        <div style="font-size: 24px; font-weight: bold; color: #757575;">{{rowData.length}}</div>
+        <div style="color: #777; font-size: 12px;">Total</div>
+      </div>
+    </div>
+  </mat-card-content>
+</mat-card>
+
+<!-- Filters -->
+<mat-card style="margin-bottom:12px;">
+  <mat-card-content>
+    <div style="display:flex; gap:16px; align-items:center; flex-wrap: wrap;">
+      <mat-form-field style="min-width: 200px;">
+        <mat-label>Instance ID</mat-label>
+        <mat-select [(ngModel)]="selectedInstanceId" (selectionChange)="applyFilters()">
+          <mat-option value="">All Instances</mat-option>
+          <mat-option *ngFor="let id of getUniqueInstanceIds()" [value]="id">{{id}}</mat-option>
+        </mat-select>
+      </mat-form-field>
+      
+      <mat-form-field style="min-width: 150px;">
+        <mat-label>Outcome</mat-label>
+        <mat-select [(ngModel)]="selectedOutcome" (selectionChange)="applyFilters()">
+          <mat-option value="">All Outcomes</mat-option>
+          <mat-option *ngFor="let outcome of getUniqueOutcomes()" [value]="outcome">{{outcome}}</mat-option>
+        </mat-select>
+      </mat-form-field>
+      
+      <mat-form-field style="min-width: 150px;">
+        <mat-label>Trigger Type</mat-label>
+        <mat-select [(ngModel)]="selectedTriggerType" (selectionChange)="applyFilters()">
+          <mat-option value="">All Types</mat-option>
+          <mat-option *ngFor="let type of getUniqueTriggerTypes()" [value]="type">{{type}}</mat-option>
+        </mat-select>
+      </mat-form-field>
+      
+      <button mat-button color="accent" (click)="clearFilters()">Clear Filters</button>
+      <button mat-button (click)="loadExecutions()">🔄 Refresh</button>
+      
+      <span style="margin-left: auto; color: #777;">
+        Showing {{filteredData.length}} of {{rowData.length}} executions
+      </span>
+    </div>
+  </mat-card-content>
+</mat-card>
+
+<ag-grid-angular
+  *ngIf="isBrowser"
+  style="height: 70vh; width: 100%;"
+  [rowData]="filteredData"
+  [columnDefs]="colDefs"
+  [defaultColDef]="defaultColDef"
+  [theme]="theme"
+  [rowSelection]="{ mode: 'singleRow' }"
+  (gridReady)="onGridReady($event)">
+</ag-grid-angular>
