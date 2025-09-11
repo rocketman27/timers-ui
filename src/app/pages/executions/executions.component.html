@@ -33,10 +33,10 @@
   <mat-card-content>
     <div style="display:flex; gap:16px; align-items:center; flex-wrap: wrap;">
       <mat-form-field style="min-width: 200px;">
-        <mat-label>Instance ID</mat-label>
-        <mat-select [(ngModel)]="selectedInstanceId" (selectionChange)="applyFilters()">
-          <mat-option value="">All Instances</mat-option>
-          <mat-option *ngFor="let id of getUniqueInstanceIds()" [value]="id">{{id}}</mat-option>
+        <mat-label>Timer ID</mat-label>
+        <mat-select [(ngModel)]="selectedTimerId" (selectionChange)="applyFilters()">
+          <mat-option value="">All Timers</mat-option>
+          <mat-option *ngFor="let id of getUniqueTimerIds()" [value]="id">{{id}}</mat-option>
         </mat-select>
       </mat-form-field>
       
@@ -56,11 +56,14 @@
         </mat-select>
       </mat-form-field>
       
-      <button mat-button color="accent" (click)="clearFilters()">Clear Filters</button>
-      <button mat-button (click)="loadExecutions()">🔄 Refresh</button>
+      <button mat-raised-button color="accent" (click)="clearFilters()">Clear Filters</button>
+      <button mat-raised-button (click)="loadExecutions()">🔄 Refresh</button>
+      <span style="margin-left:auto; color:#777;">Page {{currentPage + 1}}</span>
+      <button mat-raised-button (click)="prevPage()" [disabled]="currentPage===0">Prev</button>
+      <button mat-raised-button (click)="nextPage()" [disabled]="rowData.length===0">Next</button>
       
       <span style="margin-left: auto; color: #777;">
-        Showing {{filteredData.length}} of {{rowData.length}} executions
+        Showing {{filteredData.length}} of {{rowData.length}} executions (page {{currentPage + 1}})
       </span>
     </div>
   </mat-card-content>

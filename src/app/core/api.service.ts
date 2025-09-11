@@ -8,23 +8,19 @@ import { Observable } from 'rxjs';
 export class ApiService {
   constructor(private http: HttpClient) { }
 
-  // Templates
-  listTemplates(): Observable<any[]> { return this.http.get<any[]>('/api/templates'); }
-  createTemplate(body: any): Observable<any> { return this.http.post<any>('/api/templates', body); }
-  getTemplate(id: string): Observable<any> { return this.http.get<any>(`/api/templates/${id}`); }
-  updateTemplate(id: string, body: any): Observable<any> { return this.http.put<any>(`/api/templates/${id}`, body); }
-  deleteTemplate(id: string): Observable<any> { return this.http.delete<any>(`/api/templates/${id}`); }
-
-
-  // Instances
-  listInstances(params: any): Observable<any[]> { return this.http.get<any[]>('/api/instances', { params }); }
-  suspendInstances(ids: string[]): Observable<any[]> { return this.http.post<any[]>('/api/instances/_suspend', { ids }); }
-  resumeInstances(ids: string[]): Observable<any[]> { return this.http.post<any[]>('/api/instances/_resume', { ids }); }
-  triggerInstances(ids: string[]): Observable<any[]> { return this.http.post<any[]>('/api/instances/_trigger', { ids }); }
-  resetInstances(ids: string[]): Observable<any[]> { return this.http.post<any[]>('/api/instances/_reset', { ids }); }
+  // Timers
+  listTimers(): Observable<any[]> { return this.http.get<any[]>('/api/templates'); }
+  createTimer(body: any): Observable<any> { return this.http.post<any>('/api/templates', body); }
+  getTimer(id: string): Observable<any> { return this.http.get<any>(`/api/templates/${id}`); }
+  updateTimer(id: string, body: any): Observable<any> { return this.http.put<any>(`/api/templates/${id}`, body); }
+  deleteTimer(id: string): Observable<any> { return this.http.delete<any>(`/api/templates/${id}`); }
 
   // Executions
   listExecutions(params: any): Observable<any[]> { return this.http.get<any[]>('/api/executions', { params }); }
+
+  // Timers - manual trigger
+  triggerTimer(id: string): Observable<void> { return this.http.post<void>(`/api/timers/${id}/_trigger`, {}); }
+  triggerTimers(ids: string[]): Observable<void> { return this.http.post<void>('/api/timers/_trigger', { ids }); }
 
   // Geo catalogs
   listRegions(): Observable<any[]> { return this.http.get<any[]>('/api/geo/regions'); }

@@ -1,0 +1,135 @@
+<!-- moved from templates/template-create-dialog.component.html with same content -->
+<h2 mat-dialog-title>New Timer</h2>
+<div mat-dialog-content style="min-width: 900px;">
+  <mat-stepper [linear]="true" [selectedIndex]="selectedIndex">
+    <mat-step [stepControl]="basicForm" label="Basic Information">
+      <form [formGroup]="basicForm">
+        <div style="display:flex; flex-direction:column; gap:12px; padding:12px 0;">
+          <mat-form-field appearance="outline" style="width:100%;">
+            <mat-label style="font-size: 13px;">Timer Name *</mat-label>
+            <input matInput formControlName="name" placeholder="Enter timer name" style="font-size: 13px;" />
+            <mat-error *ngIf="basicForm.get('name')?.hasError('required')" style="font-size: 12px;">Name is required</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" style="width:100%;">
+            <mat-label style="font-size: 13px;">Time Zone *</mat-label>
+            <input matInput [matAutocomplete]="auto" formControlName="zoneId" placeholder="Type to search time zones..." style="font-size: 13px;" (input)="filterTimeZones($event)">
+            <mat-autocomplete #auto="matAutocomplete" [displayWith]="getTimeZoneDisplayName.bind(this)" (optionSelected)="onTimeZoneSelected($event)">
+              <mat-option *ngFor="let tz of filteredTimeZones" [value]="tz.value" style="font-size: 13px; display:flex; align-items:center;">
+                <span>{{ tz.label }}</span>
+                <span style="color:#1976d2; font-weight:500; margin-left: 6px;">{{ getTimeZoneOffset(tz.value) }}</span>
+              </mat-option>
+            </mat-autocomplete>
+            <mat-error *ngIf="basicForm.get('zoneId')?.hasError('required')" style="font-size: 12px;">Time zone is required</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" style="width:100%;">
+            <mat-label style="font-size: 13px;">Trigger Time (HH:mm)</mat-label>
+            <input matInput formControlName="triggerTime" placeholder="e.g., 10:15" style="font-size: 13px;" />
+          </mat-form-field>
+
+          <mat-checkbox formControlName="suspended" style="font-size: 13px;">Start as suspended</mat-checkbox>
+        </div>
+
+        <div style="margin-top: 12px;">
+          <button mat-raised-button matStepperNext [disabled]="!basicForm.valid" style="font-size: 13px;">Next</button>
+        </div>
+      </form>
+    </mat-step>
+
+    <mat-step [stepControl]="geoForm" label="Geographic Scope">
+      <form [formGroup]="geoForm">
+        <div style="display:flex; flex-direction:column; gap:12px; padding:12px 0;">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+            <mat-label style="font-weight: 500; font-size: 13px;">Scope by</mat-label>
+            <mat-button-toggle-group [value]="scopeMode" (change)="onScopeModeChange($event.value)" appearance="legacy">
+              <mat-button-toggle value="countries">Countries</mat-button-toggle>
+              <mat-button-toggle value="regions">Regions</mat-button-toggle>
+            </mat-button-toggle-group>
+          </div>
+
+          <div *ngIf="scopeMode === 'regions'">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+              <mat-label style="font-weight: 500; font-size: 13px;">Regions</mat-label>
+              <button mat-raised-button color="primary" size="small" (click)="selectAllRegions()" style="margin-left: auto; font-size: 12px;">Select All</button>
+              <button mat-raised-button color="warn" size="small" (click)="clearRegions()" style="font-size: 12px;">Clear</button>
+            </div>
+            <mat-form-field appearance="outline" style="width:100%;">
+              <mat-select formControlName="regions" multiple (selectionChange)="onRegionsChange()">
+                <mat-option *ngFor="let r of regions" [value]="r.name">{{ r.name }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <div *ngIf="scopeMode === 'countries'">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+              <mat-label style="font-weight: 500; font-size: 13px;">Countries</mat-label>
+              <span style="margin-left: auto; font-size: 11px; color: #666;">{{ (geoForm.get('countries')?.value || []).length }} selected</span>
+              <button mat-raised-button color="primary" size="small" (click)="selectAllCountries()" style="font-size: 12px;">Select All</button>
+              <button mat-raised-button color="warn" size="small" (click)="clearCountries()" style="font-size: 12px;">Clear</button>
+            </div>
+            <mat-form-field appearance="outline" style="width:100%;">
+              <mat-select formControlName="countries" multiple>
+                <mat-option *ngFor="let c of filteredCountries" [value]="c.countryCode">{{ c.countryCode }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <div *ngIf="scopeMode === 'regions'" style="margin-top: 16px; padding: 16px; background-color: #f5f5f5; border-radius: 8px; border-left: 4px solid #ff9800;">
+            <div style="margin-bottom: 12px;">
+              <mat-label style="font-weight: 500; font-size: 13px; color: #e65100;">Exclusions (Optional)</mat-label>
+              <span style="font-size: 11px; color: #666; margin-left: 8px;">Countries or regions to exclude from the selection above</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                <mat-label style="font-weight: 500; font-size: 13px;">Exclude Countries</mat-label>
+                <span style="margin-left: auto; font-size: 11px; color: #666;">{{ (geoForm.get('excludedCountries')?.value || []).length }} selected</span>
+                <button mat-raised-button color="warn" size="small" (click)="clearExcludedCountries()" style="font-size: 12px;">Clear</button>
+              </div>
+              <mat-form-field appearance="outline" style="width:100%;">
+                <mat-select formControlName="excludedCountries" multiple>
+                  <mat-option *ngFor="let c of filteredCountries" [value]="c.countryCode">{{ c.countryCode }}</mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top: 16px;">
+          <button mat-raised-button matStepperPrevious>Back</button>
+          <button mat-raised-button matStepperNext>Next</button>
+        </div>
+      </form>
+    </mat-step>
+
+    <mat-step [stepControl]="businessForm" label="Business Configuration">
+      <form [formGroup]="businessForm">
+        <div style="display:flex; flex-direction:column; gap:12px; padding:12px 0;">
+          <mat-form-field appearance="outline" style="width:100%;">
+            <mat-label style="font-size: 13px;">Flow Types (comma separated)</mat-label>
+            <input matInput formControlName="flowTypes" placeholder="e.g., FX, SWAP, CASH" style="font-size: 13px;" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" style="width:100%;">
+            <mat-label style="font-size: 13px;">Client IDs (comma separated)</mat-label>
+            <input matInput formControlName="clientIds" placeholder="e.g., CLIENT1, CLIENT2" style="font-size: 13px;" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" style="width:100%;">
+            <mat-label style="font-size: 13px;">Product Types</mat-label>
+            <mat-select formControlName="productTypes" multiple>
+              <mat-option value="CASH" style="font-size: 13px;">CASH</mat-option>
+              <mat-option value="SWAP" style="font-size: 13px;">SWAP</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+        <div style="margin-top: 12px; display:flex; gap:8px; justify-content:flex-end;">
+          <button mat-raised-button matStepperPrevious style="font-size: 13px;">Back</button>
+          <button mat-raised-button color="primary" (click)="submit()" [disabled]="isSubmitting || !isFormValid()" style="font-size: 13px;">Create Timer</button>
+        </div>
+      </form>
+    </mat-step>
+  </mat-stepper>
+</div>
+<div mat-dialog-actions style="justify-content: flex-end; margin-top: 12px;">
+  <button mat-raised-button (click)="cancel()" style="font-size: 13px;">Cancel</button>
+</div>
+
+

@@ -1,279 +1,143 @@
-import { Component, OnInit, AfterViewInit } from '@angular/core';
-import { ApiService } from '../../core/api.service';
-import { ActivatedRoute, Router } from '@angular/router';
-import { CommonModule } from '@angular/common';
-import { AgGridAngular } from 'ag-grid-angular';
-import { MatCardModule } from '@angular/material/card';
-import { MatButtonModule } from '@angular/material/button';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatSelectModule } from '@angular/material/select';
-import { MatInputModule } from '@angular/material/input';
-import { FormsModule } from '@angular/forms';
-import { ColDef, themeQuartz } from 'ag-grid-community';
+import {Component, OnInit} from '@angular/core';
+import {CommonModule} from '@angular/common';
+import {FormsModule} from '@angular/forms';
+import {AgGridAngular} from 'ag-grid-angular';
+import {ColDef} from 'ag-grid-community';
+import {MatCardModule} from '@angular/material/card';
+import {MatFormFieldModule} from '@angular/material/form-field';
+import {MatSelectModule} from '@angular/material/select';
+import {MatButtonModule} from '@angular/material/button';
+import {ApiService} from '../../core/api.service';
 
 @Component({
   selector: 'app-executions',
-  imports: [
-    CommonModule, 
-    AgGridAngular, 
-    MatCardModule, 
-    MatButtonModule, 
-    MatFormFieldModule, 
-    MatSelectModule, 
-    MatInputModule,
-    FormsModule
-  ],
+  standalone: true,
+  imports: [CommonModule, FormsModule, AgGridAngular, MatCardModule, MatFormFieldModule, MatSelectModule, MatButtonModule],
   templateUrl: './executions.component.html',
   styleUrl: './executions.component.scss'
 })
-export class ExecutionsComponent implements OnInit, AfterViewInit {
+export class ExecutionsComponent implements OnInit {
+  isBrowser = typeof window !== 'undefined';
+  selectedTimerId = '';
+  selectedOutcome = '';
+  selectedTriggerType = '';
+  currentPage = 0;
+  pageSize = 20;
+
+  colDefs: ColDef[] = [
+    {field: 'id', headerName: 'Execution ID'},
+    {field: 'timerId', headerName: 'Timer ID'},
+    {field: 'timerName', headerName: 'Timer Name'},
+    {field: 'scheduledFor', headerName: 'Scheduled For'},
+    {field: 'startedAt', headerName: 'Started At'},
+    {field: 'finishedAt', headerName: 'Finished At'},
+    {field: 'outcome', headerName: 'Outcome'},
+    {field: 'triggerType', headerName: 'Trigger'}
+  ];
+
   rowData: any[] = [];
   filteredData: any[] = [];
-  isBrowser = typeof window !== 'undefined';
-  
-  // Filter options
-  selectedInstanceId: string = '';
-  selectedOutcome: string = '';
-  selectedTriggerType: string = '';
-  
-  colDefs: ColDef[] = [
-    { field: 'id', headerName: 'Execution ID', width: 120 },
-    { field: 'instanceId', headerName: 'Instance ID', width: 120 },
-    { 
-      field: 'scheduledFor', 
-      headerName: 'Scheduled For', 
-      width: 150,
-      valueFormatter: p => {
-        if (!p.value) return '';
-        return new Date(p.value).toLocaleString();
-      }
-    },
-    { 
-      field: 'startedAt', 
-      headerName: 'Started At', 
-      width: 150,
-      valueFormatter: p => {
-        if (!p.value) return 'Not started';
-        return new Date(p.value).toLocaleString();
-      }
-    },
-    { 
-      field: 'finishedAt', 
-      headerName: 'Finished At', 
-      width: 150,
-      valueFormatter: p => {
-        if (!p.value) return 'In progress';
-        return new Date(p.value).toLocaleString();
-      }
-    },
-    { 
-      field: 'outcome', 
-      headerName: 'Outcome', 
-      width: 120,
-      cellRenderer: (p: any) => {
-        const outcome = p.value;
-        if (!outcome) return '<span style="color: #1976d2;">In Progress</span>';
-        
-        let color: string;
-        let text: string;
-        
-        switch (outcome) {
-          case 'SUCCESS':
-            color = '#4caf50';
-            text = '✅ Success';
-            break;
-          case 'FAILED':
-            color = '#f44336';
-            text = '❌ Failed';
-            break;
-          case 'SKIPPED':
-            color = '#ff9800';
-            text = '⏭️ Skipped';
-            break;
-          default:
-            color = '#757575';
-            text = outcome;
-        }
-        
-        return `<span style="color: ${color}; font-weight: 500;">${text}</span>`;
-      }
-    },
-    { 
-      field: 'triggerType', 
-      headerName: 'Trigger Type', 
-      width: 120,
-      cellRenderer: (p: any) => {
-        const triggerType = p.value;
-        switch (triggerType) {
-          case 'SCHEDULED':
-            return '🕐 Scheduled';
-          case 'MANUAL':
-            return '👆 Manual';
-          default:
-            return triggerType;
-        }
-      }
-    },
-    { 
-      field: 'errorMessage', 
-      headerName: 'Error Details', 
-      width: 200,
-      cellRenderer: (p: any) => {
-        if (!p.value) return '';
-        return `<span title="${p.value}" style="color: #f44336; cursor: help;">${p.value.length > 30 ? p.value.substring(0, 30) + '...' : p.value}</span>`;
-      }
-    },
-    { 
-      field: 'duration', 
-      headerName: 'Duration', 
-      width: 100,
-      valueGetter: p => {
-        const started = p.data?.startedAt;
-        const finished = p.data?.finishedAt;
-        
-        if (!started) return '';
-        if (!finished) return 'Running...';
-        
-        const duration = new Date(finished).getTime() - new Date(started).getTime();
-        if (duration < 1000) return '< 1s';
-        if (duration < 60000) return `${Math.round(duration / 1000)}s`;
-        return `${Math.round(duration / 60000)}m ${Math.round((duration % 60000) / 1000)}s`;
-      }
-    }
-  ];
-  
-  defaultColDef: ColDef = { 
-    sortable: true, 
-    filter: true, 
-    resizable: true
-  };
-  
-  theme = themeQuartz.withParams({});
+  defaultColDef: ColDef = {sortable: true, filter: true, resizable: true};
+  theme = undefined as any;
   gridApi: any;
 
-  constructor(
-    private api: ApiService, 
-    private route: ActivatedRoute, 
-    private router: Router
-  ) {}
+  constructor(private api: ApiService) {
+  }
 
   ngOnInit(): void {
-    if (this.isBrowser) {
-      // Check for query parameters (e.g., when navigating from instances page)
-      this.route.queryParams.subscribe(params => {
-        if (params['instanceId']) {
-          this.selectedInstanceId = params['instanceId'];
-        }
-        this.loadExecutions();
-      });
+    // optional theme init to avoid undefined binding errors
+    try {
+      // lazy import to avoid SSR issues
+      const {themeQuartz} = require('ag-grid-community');
+      this.theme = themeQuartz.withParams({});
+    } catch {
     }
+    this.loadExecutions();
   }
 
-  ngAfterViewInit(): void {
-    // Additional resize after view initialization
-    if (this.isBrowser) {
-      setTimeout(() => {
-        this.resizeColumnsAfterDataLoad();
-      }, 100);
-    }
-  }
-
-  loadExecutions() {
-    this.api.listExecutions({ page: 0, size: 100 }).subscribe(d => {
-      this.rowData = d || [];
+  loadExecutions(): void {
+    this.api.listExecutions({page: this.currentPage, size: this.pageSize}).subscribe(list => {
+      this.rowData = Array.isArray(list) ? list : [];
       this.applyFilters();
-      // Auto-resize columns after data loads
-      this.resizeColumnsAfterDataLoad();
     });
   }
 
-  private resizeColumnsAfterDataLoad(): void {
-    if (this.gridApi) {
-      // Use multiple timeouts to ensure the grid has fully rendered
-      setTimeout(() => {
-        if (this.gridApi) {
-          this.gridApi.sizeColumnsToFit();
-        }
-      }, 50);
-      
-      setTimeout(() => {
-        if (this.gridApi) {
-          this.gridApi.sizeColumnsToFit();
-        }
-      }, 200);
-      
-      setTimeout(() => {
-        if (this.gridApi) {
-          this.gridApi.sizeColumnsToFit();
-        }
-      }, 500);
-    }
-  }
-
-  applyFilters() {
-    this.filteredData = this.rowData.filter(execution => {
-      let matches = true;
-      
-      if (this.selectedInstanceId && execution.instanceId !== this.selectedInstanceId) {
-        matches = false;
-      }
-      
-      if (this.selectedOutcome && execution.outcome !== this.selectedOutcome) {
-        matches = false;
-      }
-      
-      if (this.selectedTriggerType && execution.triggerType !== this.selectedTriggerType) {
-        matches = false;
-      }
-      
-      return matches;
+  applyFilters(): void {
+    this.filteredData = this.rowData.filter(e => {
+      if (this.selectedTimerId && e.timerId !== this.selectedTimerId) return false;
+      if (this.selectedOutcome && e.outcome !== this.selectedOutcome) return false;
+      if (this.selectedTriggerType && e.triggerType !== this.selectedTriggerType) return false;
+      return true;
     });
   }
 
-  clearFilters() {
-    this.selectedInstanceId = '';
+  clearFilters(): void {
+    this.selectedTimerId = '';
     this.selectedOutcome = '';
     this.selectedTriggerType = '';
     this.applyFilters();
-    
-    // Clear query parameters
-    this.router.navigate(['/executions']);
   }
 
-  getUniqueInstanceIds(): string[] {
-    return [...new Set(this.rowData.map(e => e.instanceId))].sort();
-  }
-
-  getUniqueOutcomes(): string[] {
-    return [...new Set(this.rowData.map(e => e.outcome).filter(o => o))].sort();
-  }
-
-  getUniqueTriggerTypes(): string[] {
-    return [...new Set(this.rowData.map(e => e.triggerType))].sort();
-  }
-
-  getExecutionCount(outcome: string): number {
-    return this.rowData.filter(e => e.outcome === outcome).length;
+  getExecutionCount(status: string): number {
+    return this.rowData.filter(e => e.outcome === status).length;
   }
 
   getInProgressCount(): number {
-    return this.rowData.filter(e => !e.outcome).length;
+    return this.rowData.filter(e => !e.finishedAt && e.startedAt).length;
   }
 
-  onGridReady(event: any) {
-    event.api.sizeColumnsToFit();
-    
-    // Store grid API for later use
-    this.gridApi = event.api;
-    
-    // Auto-resize columns when data changes
-    this.gridApi.addEventListener('modelUpdated', () => {
-      setTimeout(() => this.gridApi?.sizeColumnsToFit(), 100);
+  getUniqueTimerIds(): string[] {
+    const ids = new Set<string>();
+    for (const e of this.rowData) {
+      if (e.timerId) ids.add(e.timerId);
+    }
+    return Array.from(ids);
+  }
+
+  getUniqueOutcomes(): string[] {
+    const s = new Set<string>();
+    for (const e of this.rowData) {
+      if (e.outcome) s.add(e.outcome);
+    }
+    return Array.from(s);
+  }
+
+  getUniqueTriggerTypes(): string[] {
+    const s = new Set<string>();
+    for (const e of this.rowData) {
+      if (e.triggerType) s.add(e.triggerType);
+    }
+    return Array.from(s);
+  }
+
+  onGridReady(event: any): void {
+    this.gridApi = event?.api;
+    if (this.gridApi) {
+      try {
+        this.gridApi.sizeColumnsToFit();
+      } catch {
+      }
+    }
+  }
+
+  nextPage(): void {
+    this.currentPage += 1;
+    this.api.listExecutions({page: this.currentPage, size: this.pageSize}).subscribe(list => {
+      const data = Array.isArray(list) ? list : [];
+      if (data.length === 0 && this.currentPage > 0) {
+        this.currentPage -= 1; // revert if no data
+        return;
+      }
+      this.rowData = data;
+      this.applyFilters();
     });
-    
-    // Auto-resize columns on window resize
-    window.addEventListener('resize', () => {
-      setTimeout(() => this.gridApi?.sizeColumnsToFit(), 100);
-    });
+  }
+
+  prevPage(): void {
+    if (this.currentPage === 0) {
+      return;
+    }
+    this.currentPage -= 1;
+    this.loadExecutions();
   }
 }

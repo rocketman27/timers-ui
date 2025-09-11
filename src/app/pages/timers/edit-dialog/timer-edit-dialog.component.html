@@ -1,0 +1,127 @@
+<!-- moved from templates/template-edit-dialog.component.html with same content -->
+<h2 mat-dialog-title>Edit Timer</h2>
+<div mat-dialog-content style="min-width: 900px;">
+  <div style="display:flex; flex-direction:column; gap:12px;">
+    <mat-form-field appearance="outline" style="width:100%;">
+      <mat-label style="font-size: 13px;">Name</mat-label>
+      <input matInput [(ngModel)]="model.name" name="name" style="font-size: 13px;" />
+    </mat-form-field>
+    <mat-form-field appearance="outline" style="width:100%;">
+      <mat-label style="font-size: 13px;">Time Zone *</mat-label>
+      <input matInput 
+             [matAutocomplete]="auto" 
+             [(ngModel)]="model.zoneId"
+             (input)="filterTimeZones($event)"
+             placeholder="Type to search time zones..."
+             style="font-size: 13px;"
+             [ngModelOptions]="{standalone: true}">
+      <mat-autocomplete #auto="matAutocomplete" 
+                       [displayWith]="getTimeZoneDisplayName.bind(this)"
+                       (optionSelected)="onTimeZoneSelected($event)">
+        <mat-option *ngFor="let tz of filteredTimeZones" [value]="tz.value" style="font-size: 13px; display:flex; align-items:center;">
+          <span>{{ tz.label }}</span>
+          <span style="color:#1976d2; font-weight:500; margin-left: 6px;">{{ getTimeZoneOffset(tz.value) }}</span>
+        </mat-option>
+      </mat-autocomplete>
+    </mat-form-field>
+    <mat-form-field appearance="outline" style="width:100%;">
+      <mat-label style="font-size: 13px;">Trigger time (HH:mm)</mat-label>
+      <input matInput [(ngModel)]="model.triggerTime" name="triggerTime" style="font-size: 13px;" />
+    </mat-form-field>
+    <mat-checkbox [(ngModel)]="model.suspended" name="suspended" style="font-size: 13px;">Suspended</mat-checkbox>
+  </div>
+
+  <div style="display:flex; flex-direction:column; gap:12px; margin-top:12px;">
+    <!-- Scope Toggle -->
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+      <mat-label style="font-weight: 500; font-size: 13px;">Scope by</mat-label>
+      <mat-button-toggle-group [value]="scopeMode" (change)="onScopeModeChange($event.value)" appearance="legacy">
+        <mat-button-toggle value="countries">Countries</mat-button-toggle>
+        <mat-button-toggle value="regions">Regions</mat-button-toggle>
+      </mat-button-toggle-group>
+    </div>
+
+    <!-- Regions Section -->
+    <div *ngIf="scopeMode === 'regions'">
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+        <mat-label style="font-weight: 500; font-size: 13px;">Regions</mat-label>
+        <button mat-raised-button color="primary" size="small" (click)="selectAllRegions()" style="margin-left: auto; font-size: 12px;">
+          Select All
+        </button>
+        <button mat-raised-button color="warn" size="small" (click)="clearRegions()" style="font-size: 12px;">
+          Clear
+        </button>
+      </div>
+      <mat-form-field appearance="outline" style="width:100%;">
+        <mat-select [(ngModel)]="model.regions" name="regions" (selectionChange)="onRegionsChange()" multiple>
+          <mat-option *ngFor="let r of regions" [value]="r.name">{{ r.name }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <!-- Countries Section -->
+    <div *ngIf="scopeMode === 'countries'">
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+        <mat-label style="font-weight: 500; font-size: 13px;">Countries</mat-label>
+        <span style="margin-left: auto; font-size: 11px; color: #666;">
+          {{ (model.countries || []).length }} selected
+        </span>
+        <button mat-raised-button color="primary" size="small" (click)="selectAllCountries()" style="font-size: 12px;">
+          Select All
+        </button>
+        <button mat-raised-button color="warn" size="small" (click)="clearCountries()" style="font-size: 12px;">
+          Clear
+        </button>
+      </div>
+      <mat-form-field appearance="outline" style="width:100%;">
+        <mat-select [(ngModel)]="model.countries" name="countries" (selectionChange)="onCountriesChange()" multiple>
+          <mat-option *ngFor="let c of filteredCountries" [value]="c.countryCode">{{ c.countryCode }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <!-- Exclusion Fields -->
+    <div *ngIf="scopeMode === 'regions'" style="margin-top: 16px; padding: 16px; background-color: #f5f5f5; border-radius: 8px; border-left: 4px solid #ff9800;">
+      <div style="margin-bottom: 12px;">
+        <mat-label style="font-weight: 500; font-size: 13px; color: #e65100;">Exclusions (Optional)</mat-label>
+        <span style="font-size: 11px; color: #666; margin-left: 8px;">Countries to exclude from the selection above</span>
+      </div>
+      
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+          <mat-label style="font-weight: 500; font-size: 13px;">Exclude Countries</mat-label>
+          <span style="margin-left: auto; font-size: 11px; color: #666;">
+            {{ (model.excludedCountries || []).length }} selected
+          </span>
+          <button mat-raised-button color="warn" size="small" (click)="clearExcludedCountries()" style="font-size: 12px;">
+            Clear
+          </button>
+        </div>
+        <mat-form-field appearance="outline" style="width:100%;">
+          <mat-select [(ngModel)]="model.excludedCountries" name="excludedCountries" multiple>
+            <mat-option *ngFor="let c of filteredCountries" [value]="c.countryCode">{{ c.countryCode }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+    </div>
+
+    <mat-form-field appearance="outline" style="width:100%;">
+      <mat-label style="font-size: 13px;">Flow Types (comma separated)</mat-label>
+      <input matInput [(ngModel)]="model.flowTypes" name="flowTypes" style="font-size: 13px;" />
+    </mat-form-field>
+    <mat-form-field appearance="outline" style="width:100%;">
+      <mat-label style="font-size: 13px;">Client IDs (comma separated)</mat-label>
+      <input matInput [(ngModel)]="model.clientIds" name="clientIds" style="font-size: 13px;" />
+    </mat-form-field>
+    <mat-form-field appearance="outline" style="width:100%;">
+      <mat-label style="font-size: 13px;">Product Types (CASH, SWAP, or both - comma separated)</mat-label>
+      <input matInput [(ngModel)]="model.productTypes" name="productTypes" style="font-size: 13px;" />
+    </mat-form-field>
+  </div>
+</div>
+<div mat-dialog-actions style="justify-content: flex-end;">
+  <button mat-raised-button (click)="cancel()" style="font-size: 13px;">Cancel</button>
+  <button mat-raised-button color="primary" (click)="submit()" [disabled]="isSubmitting || !model.name?.trim()" style="font-size: 13px;">Save</button>
+</div>
+
+
