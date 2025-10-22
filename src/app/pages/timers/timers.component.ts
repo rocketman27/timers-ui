@@ -109,32 +109,32 @@ export class TimersComponent implements OnInit, AfterViewInit {
   }
 
   editSelected() { if (this.selectedIds.length === 1) { const selectedRow = this.rowData.find(row => row.id === this.selectedIds[0]); if (selectedRow) { this.edit(selectedRow); } } }
-  delete(templateId: string) { this.rowData = this.rowData.filter(t => t.id !== templateId); }
+  delete(timerId: string) { this.rowData = this.rowData.filter(t => t.id !== timerId); }
 
   suspendSelected() {
     if (!this.selectedIds.length) { return; }
-    const suspendPromises = this.selectedIds.map(templateId => {
-      return this.api.getTimer(templateId).pipe(
-        switchMap(template => {
-          const updateRequest = { name: template.name, description: template.description, cronExpression: template.cronExpression, zoneId: template.zoneId, triggerTime: template.triggerTime, suspended: true, countries: template.countries || [], regions: template.regions || [], flowTypes: template.flowTypes || [], clientIds: template.clientIds || [], productTypes: template.productTypes || [] };
-          return this.api.updateTimer(templateId, updateRequest);
+    const suspendPromises = this.selectedIds.map(timerId => {
+      return this.api.getTimer(timerId).pipe(
+        switchMap(timer => {
+          const updateRequest = { name: timer.name, description: timer.description, cronExpression: timer.cronExpression, zoneId: timer.zoneId, triggerTime: timer.triggerTime, suspended: true, countries: timer.countries || [], regions: timer.regions || [], flowTypes: timer.flowTypes || [], clientIds: timer.clientIds || [], productTypes: timer.productTypes || [] };
+          return this.api.updateTimer(timerId, updateRequest);
         }),
       );
     });
-    forkJoin(suspendPromises).subscribe({ next: () => { this.rowData.forEach(template => { if (this.selectedIds.includes(template.id)) { template.suspended = true; } }); this.rowData = [...this.rowData]; const templateCount = this.selectedIds.length; this.showNotification(`✅ ${templateCount} timer(s) suspended successfully`, 'success'); this.selectedIds = []; }, error: (error) => { const errorMessage = this.extractErrorMessage(error); this.showNotification(`❌ Failed to suspend timers: ${errorMessage}`, 'error'); } });
+    forkJoin(suspendPromises).subscribe({ next: () => { this.rowData.forEach(timer => { if (this.selectedIds.includes(timer.id)) { timer.suspended = true; } }); this.rowData = [...this.rowData]; const count = this.selectedIds.length; this.showNotification(`✅ ${count} timer(s) suspended successfully`, 'success'); this.selectedIds = []; }, error: (error) => { const errorMessage = this.extractErrorMessage(error); this.showNotification(`❌ Failed to suspend timers: ${errorMessage}`, 'error'); } });
   }
 
   resumeSelected() {
     if (!this.selectedIds.length) { return; }
-    const resumePromises = this.selectedIds.map(templateId => {
-      return this.api.getTimer(templateId).pipe(
-        switchMap(template => {
-          const updateRequest = { name: template.name, description: template.description, cronExpression: template.cronExpression, zoneId: template.zoneId, triggerTime: template.triggerTime, suspended: false, countries: template.countries || [], regions: template.regions || [], flowTypes: template.flowTypes || [], clientIds: template.clientIds || [], productTypes: template.productTypes || [] };
-          return this.api.updateTimer(templateId, updateRequest);
+    const resumePromises = this.selectedIds.map(timerId => {
+      return this.api.getTimer(timerId).pipe(
+        switchMap(timer => {
+          const updateRequest = { name: timer.name, description: timer.description, cronExpression: timer.cronExpression, zoneId: timer.zoneId, triggerTime: timer.triggerTime, suspended: false, countries: timer.countries || [], regions: timer.regions || [], flowTypes: timer.flowTypes || [], clientIds: timer.clientIds || [], productTypes: timer.productTypes || [] };
+          return this.api.updateTimer(timerId, updateRequest);
         }),
       );
     });
-    forkJoin(resumePromises).subscribe({ next: () => { this.rowData.forEach(template => { if (this.selectedIds.includes(template.id)) { template.suspended = false; } }); this.rowData = [...this.rowData]; const templateCount = this.selectedIds.length; this.showNotification(`✅ ${templateCount} timer(s) resumed successfully`, 'success'); this.selectedIds = []; }, error: (error) => { const errorMessage = this.extractErrorMessage(error); this.showNotification(`❌ Failed to resume timers: ${errorMessage}`, 'error'); } });
+    forkJoin(resumePromises).subscribe({ next: () => { this.rowData.forEach(timer => { if (this.selectedIds.includes(timer.id)) { timer.suspended = false; } }); this.rowData = [...this.rowData]; const count = this.selectedIds.length; this.showNotification(`✅ ${count} timer(s) resumed successfully`, 'success'); this.selectedIds = []; }, error: (error) => { const errorMessage = this.extractErrorMessage(error); this.showNotification(`❌ Failed to resume timers: ${errorMessage}`, 'error'); } });
   }
 
   triggerSelected() {
@@ -148,16 +148,16 @@ export class TimersComponent implements OnInit, AfterViewInit {
 
   deleteSelected() {
     if (!this.selectedIds.length) { return; }
-    const templateCount = this.selectedIds.length;
-    const templateNames = this.rowData.filter(t => this.selectedIds.includes(t.id)).map(t => t.name).join(', ');
-    const selectedTemplates = this.rowData.filter(t => this.selectedIds.includes(t.id));
-    const confirmationMessage = selectedTemplates.map(t => `• ${t.name}`).join('\n');
+    const count = this.selectedIds.length;
+    const timerNames = this.rowData.filter(t => this.selectedIds.includes(t.id)).map(t => t.name).join(', ');
+    const selectedTimers = this.rowData.filter(t => this.selectedIds.includes(t.id));
+    const confirmationMessage = selectedTimers.map(t => `• ${t.name}`).join('\n');
     const confirmRef = this.dialog.open(ConfirmDialogComponent, { data: { title: 'Delete timers', message: confirmationMessage, confirmText: 'Delete', cancelText: 'Cancel' } });
     confirmRef.afterClosed().subscribe(confirmed => {
       if (!confirmed) { return; }
-      this.showNotification(`🗑️ Deleting ${templateCount} timer(s): ${templateNames}`, 'info');
-      const deletePromises = this.selectedIds.map(templateId => { return this.api.deleteTimer(templateId).pipe(switchMap(() => of({ success: true, templateId })), catchError((error) => of({ success: false, templateId, error })) ); });
-      forkJoin(deletePromises).subscribe({ next: (results) => { this.rowData = this.rowData.filter(template => !this.selectedIds.includes(template.id)); this.selectedIds = []; const successfulDeletes = results.filter(r => r.success); const failedDeletes = results.filter(r => !r.success); if (failedDeletes.length === 0) { this.showNotification(`✅ Successfully deleted ${templateCount} timer(s) via backend`, 'success'); } else if (successfulDeletes.length === 0) { this.showNotification(`⚠️ Backend delete not available, removed ${templateCount} timer(s) locally only`, 'info'); } else { this.showNotification(`⚠️ Partially successful: ${successfulDeletes.length} deleted via backend, ${failedDeletes.length} removed locally`, 'info'); } }, error: (error) => { const errorMessage = this.extractErrorMessage(error); this.showNotification(`❌ Failed to delete timers: ${errorMessage}`, 'error'); } });
+      this.showNotification(`🗑️ Deleting ${count} timer(s): ${timerNames}`, 'info');
+      const deletePromises = this.selectedIds.map(timerId => { return this.api.deleteTimer(timerId).pipe(switchMap(() => of({ success: true, timerId })), catchError((error) => of({ success: false, timerId, error })) ); });
+      forkJoin(deletePromises).subscribe({ next: (results) => { this.rowData = this.rowData.filter(timer => !this.selectedIds.includes(timer.id)); this.selectedIds = []; const successfulDeletes = results.filter(r => r.success); const failedDeletes = results.filter(r => !r.success); if (failedDeletes.length === 0) { this.showNotification(`✅ Successfully deleted ${count} timer(s) via backend`, 'success'); } else if (successfulDeletes.length === 0) { this.showNotification(`⚠️ Backend delete not available, removed ${count} timer(s) locally only`, 'info'); } else { this.showNotification(`⚠️ Partially successful: ${successfulDeletes.length} deleted via backend, ${failedDeletes.length} removed locally`, 'info'); } }, error: (error) => { const errorMessage = this.extractErrorMessage(error); this.showNotification(`❌ Failed to delete timers: ${errorMessage}`, 'error'); } });
     });
   }
 

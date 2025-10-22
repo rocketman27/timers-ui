@@ -9,11 +9,11 @@ export class ApiService {
   constructor(private http: HttpClient) { }
 
   // Timers
-  listTimers(): Observable<any[]> { return this.http.get<any[]>('/api/templates'); }
-  createTimer(body: any): Observable<any> { return this.http.post<any>('/api/templates', body); }
-  getTimer(id: string): Observable<any> { return this.http.get<any>(`/api/templates/${id}`); }
-  updateTimer(id: string, body: any): Observable<any> { return this.http.put<any>(`/api/templates/${id}`, body); }
-  deleteTimer(id: string): Observable<any> { return this.http.delete<any>(`/api/templates/${id}`); }
+  listTimers(): Observable<any[]> { return this.http.get<any[]>('/api/timers'); }
+  createTimer(body: any): Observable<any> { return this.http.post<any>('/api/timers', body); }
+  getTimer(id: string): Observable<any> { return this.http.get<any>(`/api/timers/${id}`); }
+  updateTimer(id: string, body: any): Observable<any> { return this.http.put<any>(`/api/timers/${id}`, body); }
+  deleteTimer(id: string): Observable<any> { return this.http.delete<any>(`/api/timers/${id}`); }
 
   // Executions
   listExecutions(params: any): Observable<any[]> { return this.http.get<any[]>('/api/executions', { params }); }
