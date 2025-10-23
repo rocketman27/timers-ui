@@ -16,7 +16,6 @@
              style="font-size: 13px;"
              [ngModelOptions]="{standalone: true}">
       <mat-autocomplete #auto="matAutocomplete" 
-                       [displayWith]="getTimeZoneDisplayName.bind(this)"
                        (optionSelected)="onTimeZoneSelected($event)">
         <mat-option *ngFor="let tz of filteredTimeZones" [value]="tz.value" style="font-size: 13px; display:flex; align-items:center;">
           <span>{{ tz.label }}</span>
@@ -74,7 +73,7 @@
         </button>
       </div>
       <mat-form-field appearance="outline" style="width:100%;">
-        <mat-select [(ngModel)]="model.countries" name="countries" (selectionChange)="onCountriesChange()" multiple>
+        <mat-select [(ngModel)]="model.countries" name="countries" multiple>
           <mat-option *ngFor="let c of filteredCountries" [value]="c.countryCode">{{ c.countryCode }}</mat-option>
         </mat-select>
       </mat-form-field>

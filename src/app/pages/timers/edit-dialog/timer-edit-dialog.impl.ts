@@ -149,10 +149,6 @@ export class TimerEditDialogComponent implements OnInit {
     }
   }
 
-  getTimeZoneDisplayName(v: string) {
-    return v;
-  }
-
   onTimeZoneSelected(e: any) {
     const v = e?.option?.value;
     if (v) {
@@ -162,26 +158,36 @@ export class TimerEditDialogComponent implements OnInit {
 
   getTimeZoneOffset(tz: string) {
     try {
-      const dt = new Date();
-      const optsOffset: any = {timeZone: tz, timeZoneName: 'shortOffset', year: 'numeric'};
-      let parts = new Intl.DateTimeFormat('en-US', optsOffset).formatToParts(dt);
-      let raw = parts.find(p => p.type === 'timeZoneName')?.value || '';
-      if (!raw || /^(GMT|UTC)$/i.test(raw)) {
-        const optsShort: any = {timeZone: tz, timeZoneName: 'short', year: 'numeric'};
-        parts = new Intl.DateTimeFormat('en-US', optsShort).formatToParts(dt);
-        raw = parts.find(p => p.type === 'timeZoneName')?.value || '';
-      }
-      const m = raw.match(/([GU]MT|UTC)?([+\-−]\d{1,2})(?::?(\d{2}))?/);
-      if (!m) return '(UTC+00:00)';
-      const sign = m[2].startsWith('-') || m[2].startsWith('−') ? '-' : '+';
-      const h = Math.abs(parseInt(m[2].replace('−', '-'), 10));
-      const mm = m[3] ? parseInt(m[3], 10) : 0;
-      const hh = (h < 10 ? '0' : '') + h;
-      const mmStr = (mm < 10 ? '0' : '') + mm;
-      return `(UTC${sign}${hh}:${mmStr})`;
+      const now = new Date();
+
+      const offsetStr = this.readTimeZoneName(now, tz, 'shortOffset');
+      const parsedFromOffset = this.parseOffset(offsetStr);
+      if (parsedFromOffset) return parsedFromOffset;
+
+      const shortStr = this.readTimeZoneName(now, tz, 'short');
+      const parsedFromShort = this.parseOffset(shortStr);
+      return parsedFromShort ?? '(UTC+00:00)';
     } catch {
       return '(UTC+00:00)';
     }
+  }
+
+  private readTimeZoneName(date: Date, tz: string, mode: 'shortOffset' | 'short'): string {
+    const opts: any = { timeZone: tz, timeZoneName: mode, year: 'numeric' };
+    const parts = new Intl.DateTimeFormat('en-US', opts).formatToParts(date);
+    return parts.find(p => p.type === 'timeZoneName')?.value || '';
+  }
+
+  private parseOffset(label: string): string | null {
+    if (!label || /^(GMT|UTC)$/i.test(label)) return null;
+    const m = label.match(/([GU]MT|UTC)?([+\-−]\d{1,2})(?::?(\d{2}))?/);
+    if (!m) return null;
+    const sign = m[2].startsWith('-') || m[2].startsWith('−') ? '-' : '+';
+    const hours = Math.abs(parseInt(m[2].replace('−', '-'), 10));
+    const minutes = m[3] ? parseInt(m[3], 10) : 0;
+    const hh = hours < 10 ? `0${hours}` : String(hours);
+    const mm = minutes < 10 ? `0${minutes}` : String(minutes);
+    return `(UTC${sign}${hh}:${mm})`;
   }
 }
 
