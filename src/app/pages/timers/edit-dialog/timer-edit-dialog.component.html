@@ -114,8 +114,11 @@
       <input matInput [(ngModel)]="model.clientIds" name="clientIds" style="font-size: 13px;" />
     </mat-form-field>
     <mat-form-field appearance="outline" style="width:100%;">
-      <mat-label style="font-size: 13px;">Product Types (CASH, SWAP, or both - comma separated)</mat-label>
-      <input matInput [(ngModel)]="model.productTypes" name="productTypes" style="font-size: 13px;" />
+      <mat-label style="font-size: 13px;">Product Types</mat-label>
+      <mat-select [(ngModel)]="model.productTypes" name="productTypes" multiple>
+        <mat-option value="CASH" style="font-size: 13px;">CASH</mat-option>
+        <mat-option value="SWAP" style="font-size: 13px;">SWAP</mat-option>
+      </mat-select>
     </mat-form-field>
   </div>
 </div>

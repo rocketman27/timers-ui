@@ -66,13 +66,28 @@ export class TimerEditDialogComponent implements OnInit {
       zoneId: this.model.zoneId,
       triggerTime: this.model.triggerTime,
       suspended: !!this.model.suspended,
-      countries: this.model.countries,
-      regions: this.model.regions,
-      excludedCountries: this.model.excludedCountries,
-      excludedRegions: this.model.excludedRegions,
-      flowTypes: this.model.flowTypes,
-      clientIds: this.model.clientIds,
-      productTypes: this.model.productTypes
+      countries: Array.isArray(this.model.countries) ? this.model.countries : [],
+      regions: Array.isArray(this.model.regions) ? this.model.regions : [],
+      excludedCountries: Array.isArray(this.model.excludedCountries) ? this.model.excludedCountries : [],
+      excludedRegions: Array.isArray(this.model.excludedRegions) ? this.model.excludedRegions : [],
+      flowTypes: Array.isArray(this.model.flowTypes)
+        ? this.model.flowTypes
+        : String(this.model.flowTypes || '')
+          .split(',')
+          .map((s: string) => s.trim())
+          .filter((s: string) => !!s),
+      clientIds: Array.isArray(this.model.clientIds)
+        ? this.model.clientIds
+        : String(this.model.clientIds || '')
+          .split(',')
+          .map((s: string) => s.trim())
+          .filter((s: string) => !!s),
+      productTypes: Array.isArray(this.model.productTypes)
+        ? this.model.productTypes
+        : String(this.model.productTypes || '')
+          .split(',')
+          .map((s: string) => s.trim())
+          .filter((s: string) => !!s)
     };
     this.api.updateTimer(this.model.id, body).subscribe({
       next: () => {
